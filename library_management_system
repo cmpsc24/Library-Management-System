@@ -1,0 +1,129 @@
+import json
+from datetime import datetime, timedelta
+
+class Book:
+    def __init__(self, title, author, isbn, quantity):
+        self.title = title
+        self.author = author
+        self.isbn = isbn
+        self.quantity = quantity
+
+    def display_details(self):
+        print(f"Title: {self.title}\nAuthor: {self.author}\nISBN: {self.isbn}\nQuantity: {self.quantity}")
+
+class Patron:
+    def __init__(self, name, id, contact_info):
+        self.name = name
+        self.id = id
+        self.contact_info = contact_info
+
+    def display_details(self):
+        print(f"Name: {self.name}\nID: {self.id}\nContact Info: {self.contact_info}")
+
+class Transaction:
+    def __init__(self, book, patron):
+        self.book = book
+        self.patron = patron
+        self.checked_out_date = datetime.now()
+        self.due_date = self.checked_out_date + timedelta(days=14)
+
+    def check_in(self):
+        return datetime.now() > self.due_date
+
+    def display_details(self):
+        print(f"Book: {self.book.title}\nPatron: {self.patron.name}\nChecked Out Date: {self.checked_out_date}\nDue Date: {self.due_date}")
+
+class Library:
+    def __init__(self):
+        self.books = []
+        self.patrons = []
+        self.transactions = []
+
+    def add_book(self, book):
+        self.books.append(book)
+
+    def add_patron(self, patron):
+        self.patrons.append(patron)
+
+    def checkout_book(self, book, patron):
+        if book.quantity > 0:
+            transaction = Transaction(book, patron)
+            self.transactions.append(transaction)
+            book.quantity -= 1
+            return transaction
+        else:
+            return None
+
+    def checkin_book(self, transaction):
+        transaction.book.quantity += 1
+        self.transactions.remove(transaction)
+
+    def search_books(self, query):
+        found_books = []
+        for book in self.books:
+            if query.lower() in book.title.lower() or query.lower() in book.author.lower() or query.lower() == book.isbn.lower():
+                found_books.append(book)
+                return found_books
+
+    def generate_reports(self):
+        pass # Logic to generate various reports
+
+    def save_data(self):
+        with open('library_data.json', 'w') as f:
+            data = {
+                "books": [book.__dict__ for book in self.books],
+                "patrons": [patron.__dict__ for patron in self.patrons],
+                "transactions": [transaction.__dict__ for transaction in self.transactions]
+            }
+            json.dump(data, f)
+
+    def load_data(self):
+        with open('library_data.json', 'r') as f:
+            data = json.load(f)
+            self.books = [Book(**book_data) for book_data in data["books"]]
+            self.patrons = [Patron(**patron_data) for patron_data in data["patrons"]]
+            self.transactions = [Transaction(**transaction_data) for transaction_data in data["transactions"]]
+
+
+# Create a library instance
+library = Library()
+
+# Add books and patrons
+library.add_book(Book("The Great Gatsby", "F. Scott Fitzgerald", "978-0743273565", 5))
+library.add_book(Book("To Kill a Mockingbird", "Harper Lee", "978-0061120084", 3))
+
+library.add_patron(Patron("John Doe", 1, "john@example.com"))
+
+# Checkout a book
+transaction = library.checkout_book(library.books[0], library.patrons[0])
+
+# Display book details
+print("Book details:")
+library.books[0].display_details()
+
+# Display patron details
+print("\nPatron details:")
+library.patrons[0].display_details()
+
+# Display transaction details
+print("\nTransaction details:")
+transaction.display_details()
+
+# Save data to file
+library.save_data()
+
+# After restarting the program or loading data from storage
+library.load_data()
+
+# Display loaded data
+print("\nLoaded book details:")
+for book in library.books:
+    book.display_details()
+
+print("\nLoaded patron details:")
+for patron in library.patrons:
+    patron.display_details()
+
+print("\nLoaded transaction details:")
+for transaction in library.transactions:
+    transaction.display_details()
